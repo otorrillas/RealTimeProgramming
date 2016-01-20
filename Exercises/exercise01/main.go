@@ -20,7 +20,6 @@ func Thread_func1() {
 		i+=1
 	}
     
-    fmt.Println(i)
       
 }
 
@@ -32,7 +31,6 @@ func Thread_func2() {
 		i-=1
 	}
     
-    fmt.Println(i)
       
 }
 
@@ -40,16 +38,13 @@ func main(){
 
 	runtime.GOMAXPROCS(runtime.NumCPU())    
                                            
-    go Thread_func1()                      
-
-    time.Sleep(100*time.Millisecond)
-    
+    go Thread_func1()                          
     go Thread_func2()                      
 
-    time.Sleep(100*time.Millisecond)
+    time.Sleep(200*time.Millisecond)
     
     
-    fmt.Println("Hello from main!")
+    fmt.Println(i)
 
 
 
