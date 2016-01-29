@@ -10,19 +10,9 @@ LDFLAGS = -lcomedi -lm
 # list of sources
 ELEVSRC = ElevInterface.c io.c main.c
 
-# program executable file name.
-TARGET = elevator
-
-#execution folders
-EXE_DIR = exe/
 
 # top-level rule, to compile everything.
-all: $(TARGET) directories
-
-directories: ${EXE_DIR}
-
-${EXE_DIR}:
-	${MKDIR_P} ${EXE_DIR}
+all: $(TARGET) 
 
 # Define all object files.
 ELEVOBJ = $(ELEVSRC:.c=.o)
@@ -31,8 +21,8 @@ ELEVOBJ = $(ELEVSRC:.c=.o)
 $(TARGET): $(ELEVOBJ)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
-# Compile: create object files from C source files.
-%.o : %.c
+# Compile: create object files from C++ source files.
+%.o : %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@ 
 
 # rule for cleaning re-compilable files.
@@ -41,4 +31,4 @@ clean:
 
 rebuild:	clean all
 
-.PHONY: all rebuild clean directories
+.PHONY: all rebuild clean
