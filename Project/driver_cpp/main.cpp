@@ -6,11 +6,13 @@
 
 #include <iostream>
 #include "ElevInterface.hpp"
+#include "PanelInterface.hpp"
 
 using namespace std;
 
 int main() {
     ElevInterface elevInt;
+    PanelInterface panelInt;
 
     cout << "Press STOP button to stop elevator and exit program." << endl;
 
@@ -18,14 +20,22 @@ int main() {
 
     while (1) {
         // Change direction when we reach top/bottom floor
-        if (elevInt.get_floor_sensor_signal() == N_FLOORS - 1) {
+        int currFloor = elevInt.get_floor_sensor_signal();
+
+        if (currFloor == N_FLOORS - 1) {
             elevInt.set_motor_direction(ElevInterface::DIRN_DOWN);
-        } else if (elevInt.get_floor_sensor_signal() == 0) {
+            panelInt.set_floor_indicator(currFloor);
+        } 
+        else if (currFloor == 0) {
             elevInt.set_motor_direction(ElevInterface::DIRN_UP);
+            panelInt.set_floor_indicator(currFloor);
+        }
+        else if (currFloor > 0) {
+            panelInt.set_floor_indicator(currFloor);
         }
 
         // Stop elevator and exit program if the stop button is pressed
-        if (elevInt.get_stop_signal()) {
+        if (panelInt.get_stop_signal()) {
             elevInt.set_motor_direction(ElevInterface::DIRN_STOP);
             return 0;
         }

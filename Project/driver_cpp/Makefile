@@ -1,29 +1,31 @@
 # Which compiler to use
-CC = g++
+CXX = g++
 
 # Compiler flags go here.
-CFLAGS = -g -Wall -Wextra
+CXXFLAGS = -g -std=c++11 -Wall -Wextra
 
 # Linker flags go here.
 LDFLAGS = -lcomedi -lm
 
 # list of sources
-ELEVSRC = ElevInterface.c io.c main.c
+ELEVSRC = ElevInterface.cpp PanelInterface.cpp io.cpp main.cpp
 
+# program executable file name.
+TARGET = elevator
 
 # top-level rule, to compile everything.
 all: $(TARGET) 
 
 # Define all object files.
-ELEVOBJ = $(ELEVSRC:.c=.o)
+ELEVOBJ = $(ELEVSRC:.cpp=.o)
 
 # rule to link the program
 $(TARGET): $(ELEVOBJ)
-	$(CC) $^ -o $@ $(LDFLAGS)
+	$(CXX) $^ -o $@ $(LDFLAGS)
 
 # Compile: create object files from C++ source files.
 %.o : %.cpp
-	$(CC) $(CFLAGS) -c $< -o $@ 
+	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
 # rule for cleaning re-compilable files.
 clean:
