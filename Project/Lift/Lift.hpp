@@ -22,17 +22,23 @@ private:
 public:
 	Lift();
 
-	// Getters
-	bool get_state();
-	int get_current_floor();
-	int get_target_floors();
+	// Communication with master
+	void com_initialize();
+	void com_listen();
+	void com_reply();
 
-	// setters
-	void go_to_floor(int floor);
+	
 
 private:
-	
-	void set_direction(elev_motor_direction_t dirn);
+
+	// Getters
+	bool elev_get_state();
+	int elev_get_current_floor();
+	int elev_get_target_floors();
+
+	// setters
+	void elev_add_target_floor(int floor);
+	void elev_set_direction(elev_motor_direction_t dirn);
 
 
 }
