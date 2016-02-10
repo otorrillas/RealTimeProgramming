@@ -25,7 +25,7 @@ PanelInterface::PanelInterface() {
     assert(init_success && "Unable to initialize elevator hardware!");
 
 	for (int f = 0; f < N_FLOORS; f++) {
-        for (int bt; bt < N_BUTTONS; bt++){
+        for (int bt = 0; bt < N_BUTTONS; bt++){
             elev_button_type_t b = elev_button_type_t(bt);
             set_button_lamp(b, f, 0);
         }
