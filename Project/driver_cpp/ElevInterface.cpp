@@ -9,8 +9,6 @@
 ElevInterface::ElevInterface() {
     int init_success = io_init();
     assert(init_success && "Unable to initialize elevator hardware!");
-
-    
 }
 
 void ElevInterface::set_motor_direction(elev_motor_direction_t dirn) {

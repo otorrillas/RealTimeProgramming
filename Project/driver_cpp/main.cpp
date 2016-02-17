@@ -16,7 +16,14 @@ int main() {
 
     cout << "Press STOP button to stop elevator and exit program." << endl;
 
-    elevInt.set_motor_direction(ElevInterface::DIRN_UP);
+    int currFloor = elevInt.get_floor_sensor_signal();
+    if(currFloor == -1) {
+        elevInt.set_motor_direction(ElevInterface::DIRN_DOWN);
+        while((currFloor = elevInt.get_floor_sensor_signal()) -1);
+        delay(10);
+        elevInt.set_motor_direction(ElevInterface::DIRN_STOP);
+    }
+    //elevInt.set_motor_direction(ElevInterface::DIRN_UP);
 
     while (1) {
         // Change direction when we reach top/bottom floor
