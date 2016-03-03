@@ -22,7 +22,7 @@ if(pid == 0) {
     setsid();
     pid = fork();
     if (pid == 0) {
-        char *argv[] = {"gnome-terminal", "-x", "./backup3.exe", 0};
+        char *argv[] = {"gnome-terminal", "-x", "./backup.exe", 0};
         int rc = execv("/usr/bin/gnome-terminal", argv);
         if (rc == -1 )
             perror("Error at spawning backup");
