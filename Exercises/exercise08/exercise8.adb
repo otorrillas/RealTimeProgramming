@@ -3,19 +3,19 @@ use  Ada.Text_IO, Ada.Integer_Text_IO, Ada.Numerics.Float_Random;
 
 -- (Ada tabs = 3 spaces)
 
-procedure exercise7 is
+procedure exercise8 is
 
    Count_Failed   : exception;   -- Exception to be raised when counting fails
    Gen            : Generator;   -- Random number generator
 
    protected type Transaction_Manager (N : Positive) is
       entry       Finished;
-      function    Commit return Boolean;
+      entry       Wait_Until_Abort;
       procedure   Signal_Abort;
    private
       Finished_Gate_Open   : Boolean := False;
       Aborted              : Boolean := False;
-      Will_Commit          : Boolean := True;
+
    end Transaction_Manager;
    protected body Transaction_Manager is
       entry Finished when Finished_Gate_Open or Finished'Count = N is
@@ -25,38 +25,41 @@ procedure exercise7 is
          ------------------------------------------
          Put_Line( "Manager.Finished: Finished'Count =" & Integer'Image( Finished'Count )
                     & " Aborted = " & Boolean'Image( Aborted ) 
-                    & " Will_Commit = " & Boolean'Image(Will_Commit));
+                  );
 
          if Finished'Count = N - 1 then
             -- Last participant
             Finished_Gate_Open := True;
-            Will_Commit := True;
-         end if;
 
-         if Aborted then
-            Will_Commit := False;
          end if;
 
          if Finished'Count = 0 then
             -- First participant
             Finished_Gate_Open := False;
-            Aborted := False;
+
          end if;
          
       end Finished;
+
+
+   entry Wait_Until_Abort when Aborted = True is
+
+     begin
+
+	if Wait_Until_Abort'Count = 0 then
+	Aborted := False;
+	end if;
+
+      end Wait_Until_Abort;
+    
 
       procedure Signal_Abort is
       begin
          Aborted := True;
       end Signal_Abort;
 
-      function Commit return Boolean is
-      begin
-         return Will_Commit;
-      end Commit;
       
    end Transaction_Manager;
-
 
 
    
@@ -83,7 +86,6 @@ procedure exercise7 is
 
 
 
-
    task type Transaction_Worker (Initial : Integer; Manager : access Transaction_Manager);
    task body Transaction_Worker is
       Num         : Integer   := Initial;
@@ -96,13 +98,21 @@ procedure exercise7 is
          Put_Line ("Worker" & Integer'Image(Initial) & " started round" & Integer'Image(Round_Num));
          Round_Num := Round_Num + 1;
 
-         ---------------------------------------
+         
+
+	select
+	    Manager.Wait_Until_Abort; 
+	    Num := Prev+5;
+	    Put_Line ("  Worker" & Integer'Image(Initial) & " forward recovering: " & Integer'Image(Num));
+	   
+	then abort
+	---------------------------------------
          -- PART 2: Do the transaction work here          
          ---------------------------------------
          begin
             Num := Unreliable_Slow_Add(Num);
             Manager.Finished;
-         -------------------------------------------
+         --------------------------------------------
          -- Exception catching
          -------------------------------------------
          exception
@@ -110,20 +120,9 @@ procedure exercise7 is
                Put_Line ("Worker" & Integer'Image(Initial) & " aborting");
                Manager.Signal_Abort;
 
-         end;
-
-         if Manager.Commit = True then
-            Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));
-         else
-            Put_Line ("  Worker" & Integer'Image(Initial) &
-                      " reverting from" & Integer'Image(Num) &
-                      " to" & Integer'Image(Prev));
-            -------------------------------------------
-            -- PART 2: Roll back to previous value here
-            -------------------------------------------
-            Num := Prev;
-
-         end if;
+         end;	
+	     Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));
+	end select;
 
          Prev := Num;
          delay 0.5;
@@ -141,8 +140,8 @@ procedure exercise7 is
    Worker_3 : Transaction_Worker (2, Manager'Access);
 
 begin
-   Reset(Gen); -- Seed the random number generator
-end exercise7;
+   Reset(Gen); 
+end exercise8;
 
 
 
