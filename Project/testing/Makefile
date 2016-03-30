@@ -2,10 +2,11 @@
 CXX = g++
 
 # Compiler flags go here.
-CXXFLAGS = -g -std=c++11 -Wall -Wextra
+CXXFLAGS = -g -std=c++11 -Wall -Wextra 
+# -lpthread -Wl,--no-as-needed
 
 # Linker flags go here.
-LDFLAGS = -lcomedi -lm
+LDFLAGS = -lcomedi -lm -pthread 
 
 # list of sources
 ELEVSRC = ElevInterface.cpp PanelInterface.cpp io.cpp main.cpp
