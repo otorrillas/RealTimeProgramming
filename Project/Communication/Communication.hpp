@@ -18,10 +18,14 @@
 #include <map>
 #include <sstream>
 #include <stdexcept>
-#include <thread>
 
-#define MYPORT_RECV 3490
-#define MYPORT_SEND 3491
+#include <fstream>
+#include <sys/ioctl.h>
+#include <net/if.h>
+
+
+#define MYPORT_MASTER 3490
+#define MYPORT_LIFT 3492
 #define MASTER_IP "0.0.0.0"
 #define MAXDATASIZE 256
 #define BACKLOG 10
@@ -38,9 +42,10 @@ protected:
     int fdmax;
     int listener;
 
-    int sockfd, newfd, sock_ord, numbytes;
+    int sockfd, newfd, sock_ord, numbytes, socky, exist = 0;
     struct sockaddr_in my_addr;
     struct sockaddr_in their_addr;
+    struct ifreq ifr;
     socklen_t sin_size;
     int yes;
     char buf[ MAXDATASIZE ];
@@ -50,27 +55,22 @@ protected:
     bool overflow_packet_proc = false;
 
     vector<string> received_messages;
-    map<string, string > lift_list;
+    fstream lift_file;
+
 
 public:
 
-const char* lift_status = "IDLE";
-
-void initialize_reciever();
-
-void initialize_sender();
+map<string, string > lift_list;
+map<string, int> sockets;
 
 string marshal(const char *message, const char *from,const char *destination);
 
 string unmarshal(string packet, string type);
 
-int recieve_all(int socket);
+int recieveAll(int socket);
 
-int send_all( int s, const char *message, const char *from, const char *destination);
+int sendAll( int s, const char *message, const char *from, const char *destination);
 
-void send_message(const char *message, const char *destination);
-
-void Thread_send();
 
 };
 

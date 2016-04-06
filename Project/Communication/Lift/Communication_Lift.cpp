@@ -1,59 +1,165 @@
 #include "Communication.hpp"
-#include "Communication_lift.hpp"
+#include "Communication_Lift.hpp"
 
 using namespace std;
 
 
+void Communication_Lift::initializeReciever(){
 
-    Communication_Lift::Communication_Lift(){
+        FD_ZERO( & head_set );
+        FD_ZERO( & read_fds );
 
-    Communication();
-    initialize_reciever();
-    initialize_sender();
-    send_message("HELLO", MASTER_IP);
+        if(( listener = socket( AF_INET, SOCK_STREAM, 0 ) ) == - 1 ) {
+
+            perror( "socket error" );
+            exit( 1 );
+        }
+
+        if( setsockopt( listener, SOL_SOCKET, SO_REUSEADDR, & yes, sizeof( int ) ) == - 1 ) {
+            perror( "setsockopt error" );
+            exit( 1 );
+        }
+
+        ifr.ifr_addr.sa_family = AF_INET;
+        strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+        ioctl(listener, SIOCGIFADDR, &ifr);
+
+        my_addr.sin_family = AF_INET;
+        inet_aton(inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), &my_addr.sin_addr);
+        my_addr.sin_port = htons(MYPORT_LIFT);
+        memset( &( my_addr.sin_zero ), '\0', 8 );
+
+        cout << " RCV IP: " << inet_ntoa(my_addr.sin_addr);
+
+        if( bind( listener,( struct sockaddr * ) & my_addr, sizeof( struct sockaddr ) ) == - 1 ) {
+            perror( "bind error recv" );
+            exit( 1 );
+        }
+
 
     }
 
-    void Communication_Lift::accept_orders(){
+void Communication_Lift::initializeSender(){
 
+    if(( sock_ord = socket( AF_INET, SOCK_STREAM, 0 ) ) == - 1 ) {
+        perror( "socket" );
+        exit( 1 );
+    }
+
+     if( setsockopt( sock_ord, SOL_SOCKET, SO_REUSEADDR, & yes, sizeof( int ) ) == - 1 ) {
+            perror( "setsockopt error" );
+            exit( 1 );
+        }
+
+        ifr.ifr_addr.sa_family = AF_INET;
+        strncpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+        ioctl(sock_ord, SIOCGIFADDR, &ifr);
+
+        my_addr.sin_family = AF_INET;
+        inet_aton(inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr), &my_addr.sin_addr);
+        my_addr.sin_port = htons(MYPORT_LIFT);
+        memset( &( my_addr.sin_zero ), '\0', 8 );
+
+        cout << " SEND IP: " << inet_ntoa(my_addr.sin_addr);
+
+        their_addr.sin_family = AF_INET;
+        their_addr.sin_port = htons(MYPORT_MASTER);
+        inet_aton("129.241.187.147", &their_addr.sin_addr);
+        memset( &( their_addr.sin_zero ), '\0', 8 );
+
+}
+
+ void Communication_Lift::acceptOrders(){
 
         if( listen( listener, BACKLOG ) == - 1 ) {
                 perror( "listen error" );
                 exit( 1 );
             }
 
+        FD_SET( listener, & head_set );
+        fdmax = listener;
 
-        while( 1 ) {
 
-            sin_size = sizeof( struct sockaddr_in );
+    while( 1 ) {
 
-            if(( listener = accept( sockfd,( struct sockaddr * ) & their_addr, & sin_size ) ) == - 1 ) {
-                perror( "accept" );
-                continue;
-            }
-            if( !fork() ) {
+        read_fds = head_set;
+        if( select( fdmax + 1, & read_fds, NULL, NULL, NULL ) == - 1 ) {
+            perror( "select" );
+            exit( 1 );
+        }
 
-                close( sock_ord );
 
-                if(( numbytes = recieve_all( listener) ) <= 0 ) {
+        for(int i = 0; i <= fdmax; i++ ) {
+
+            if( FD_ISSET( i, & read_fds ) ) { // mamy jednego!!
+
+                if( i == listener ) {
+
+                        sin_size = sizeof( struct sockaddr_in );
+
+
+                    if(( newfd = accept( listener,( struct sockaddr * ) & their_addr, & sin_size ) ) == - 1 ) {
+                        perror( "accept error" );
+
+                    } else {
+                        FD_SET( newfd, & head_set ); // dodaj do głównego zestawu
+
+                            if( newfd > fdmax ) {fdmax = newfd;}// śledź maksymalny
+
+                                printf( "selectserver: new connection from %s on "
+                                "socket %d\n", inet_ntoa( their_addr.sin_addr ), newfd );
+                                }
+                 } else {
+
+                    if(( numbytes = recieveAll( i) ) <= 0 ) {
+
 
                         if( numbytes == 0 ) {
-                            printf( "selectserver: socket %d hung up\n", listener );
+                            printf( "selectserver: socket %d hung up\n", i );
+
                         }
                         else {
                             perror( "recv" );
                         }
-                            close( listener);
+                            close( i );
+                            FD_CLR( i, & head_set );
 
                         } else {
 
-                send_message(lift_status, MASTER_IP);
+                            cout << "Last recieved order: " << received_messages.back() << endl;
+                            cout << "Number of messages:" << received_messages.size() << endl;
+/*
+                            vector<string>::iterator it;
+                            int c = 0;
+                            for(it = received_messages.begin(); it != received_messages.end(); it++ ){
+                            cout << c << " : " << *it << endl;
+                            c++;
+                            }
 
+ */                           sendMessage("LIFT HERE!", "129.241.187.147");
+
+
+                        }
+                    }
                 }
-                close( listener );
+            }
         }
+      }
+
+ void Communication_Lift::sendMessage(const char *message, const char *destination){
+
+    inet_aton(destination, &their_addr.sin_addr);
+
+    if(exist == 0){
+
+
+    if( connect( sock_ord,( struct sockaddr * ) & their_addr, sizeof( struct sockaddr ) ) == - 1 ) {
+        perror( "connect error" );
+        exit( 1 );
+
     }
-
+      exist = 1;
+    }
+    sendAll( sock_ord, message, inet_ntoa(my_addr.sin_addr), destination);
 }
-
 

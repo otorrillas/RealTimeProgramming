@@ -6,54 +6,6 @@ using namespace std;
     int yes = 1;
 
 
-void Communication::initialize_reciever(){
-
-        FD_ZERO( & head_set );
-        FD_ZERO( & read_fds );
-
-        if(( listener = socket( AF_INET, SOCK_STREAM, 0 ) ) == - 1 ) {
-
-            perror( "socket error" );
-            exit( 1 );
-        }
-
-        if( setsockopt( listener, SOL_SOCKET, SO_REUSEADDR, & yes, sizeof( int ) ) == - 1 ) {
-            perror( "setsockopt error" );
-            exit( 1 );
-        }
-
-        my_addr.sin_family = AF_INET;
-        my_addr.sin_port = htons( MYPORT_SEND);
-        my_addr.sin_addr.s_addr = INADDR_ANY;
-        memset( &( my_addr.sin_zero ), '\0', 8 );
-
-
-        if( bind( listener,( struct sockaddr * ) & my_addr, sizeof( struct sockaddr ) ) == - 1 ) {
-            perror( "bind error" );
-            exit( 1 );
-        }
-
-    }
-
-void Communication::initialize_sender(){
-
-    if(( sock_ord = socket( AF_INET, SOCK_STREAM, 0 ) ) == - 1 ) {
-        perror( "socket" );
-        exit( 1 );
-    }
-
-    their_addr.sin_family = AF_INET;
-    their_addr.sin_port = htons( MYPORT_RECV );
-    their_addr.sin_addr.s_addr = INADDR_ANY;
-    memset( &( their_addr.sin_zero ), '\0', 8 );
-
-    if( connect( sock_ord,( struct sockaddr * ) & their_addr, sizeof( struct sockaddr ) ) == - 1 ) {
-        perror( "connect error" );
-        exit( 1 );
-    }
-
-}
-
 string Communication::marshal(const char *message, const char *from,const char *destination){
 
     string packet;
@@ -85,25 +37,25 @@ string Communication::marshal(const char *message, const char *from,const char *
 }
 
 string Communication::unmarshal(string packet, string type){
-
+try{
     int dollar_sign = packet.find("$");
     int slash = packet.find("/");
     int percent = packet.find("%");
     int open_mark = packet.find("<");
     int close_mark = packet.find(">");
 
-    string packet_len = packet.substr(dollar_sign, slash );
-    string from = packet.substr(slash, percent );
-    string destination = packet.substr(percent, open_mark );
-    string message = packet.substr(open_mark, close_mark );
+    string packet_len = packet.substr(dollar_sign+1, slash-(dollar_sign+1));
+    string from = packet.substr(slash+1, percent-(slash+1) );
+    string destination = packet.substr(percent+1, open_mark-(percent+1) );
+    string message = packet.substr(open_mark+1, close_mark-(open_mark+1) );
 
     if(type == "from"){return from;}
     if(type == "destination"){return destination;}
     if(type == "message"){return message;}
-
+}catch(const out_of_range &oor){cout << "Substring Error"<<endl;}
 }
 
-int Communication::recieve_all(int socket){
+int Communication::recieveAll(int socket){
 
     int n;
     memset(buf,'\0', sizeof(buf));
@@ -116,13 +68,14 @@ int Communication::recieve_all(int socket){
     } else {
 
         string packet(buf);
+        //cout << "PO pierwszym recv:" << packet << endl;
 
     // searching for the packet length which is placed beetween $ and /
 
         int dollar_sign = packet.find("$");
         int slash = packet.find("/");
 
-        if(dollar_sign != -1 && slash != -1){
+        if(dollar_sign != -1 && slash != -1 && dollar_sign < slash){
 
 
             if(dollar_sign > 0){
@@ -139,7 +92,8 @@ int Communication::recieve_all(int socket){
 
         // checking if recieved full packet or a part of it -> comparing bufer length with packet size
         // if not calls recieve in a loop untill gets the whole packet
-
+        try{
+            try{
                 int total = strlen(buf);
                 int pack_len = stoi(packet_len);
 
@@ -180,7 +134,7 @@ int Communication::recieve_all(int socket){
 
                 while(total > pack_len){
 
-                    if(dollar_sign != -1 && slash != -1){
+                    if(dollar_sign != -1 && slash != -1 && dollar_sign < slash){
 
                         packet_len = packet.substr(dollar_sign+1, slash-(dollar_sign+1) );
                         pack_len = stoi(packet_len);
@@ -209,12 +163,20 @@ int Communication::recieve_all(int socket){
 
                             }
 
-                        }
+                        }else{break;}
                     }
 
                 } total = 0;
-
+                }catch(const invalid_argument &ia){cout << "Stoi Error"<<endl;}
+              }catch(const out_of_range &oor){cout << "Substring Error"<<endl;}
             } else { perror("Recieved garbage data"); }
+
+            //typedef vector<string>::const_iterator VecIterator;
+           //int i = 1;
+            //for (VecIterator iter = received_messages.begin(); iter != received_messages.end(); iter++){
+            //cout << i << ": " <<*iter << endl;
+            //i++;
+            //}
 
             if(n == 0) { return n = 0; }
             if(n == -1) { return n =-1; }
@@ -222,34 +184,34 @@ int Communication::recieve_all(int socket){
         }
     }
 
-int Communication::send_all( int s, const char *message, const char *from, const char *destination)
+int Communication::sendAll( int s, const char *message, const char *from, const char *destination)
 {
 
     const char *buf = marshal(message,from, destination).c_str();
     unsigned int len = strlen(buf);
 
-    int total = 0; // ile bajtów już wysłaliśmy
-    int bytesleft = len; // ile jeszcze zostało do wysłania
+    int total = 0;
+    int bytesleft = len;
     int n;
 
 
     while( total <  len ) {
 
-        n = send( s, buf + total, bytesleft, 0 );
+        n = send( s, buf, bytesleft, 0 );
         if( n == - 1 ) { break; }
         total += n;
         bytesleft -= n;
     }
 
-    len = total; // zwróć ilość faktycznie wysłanych bajtów
+    len = total;
 
-    return n ==- 1 ?- 1: 0; // zwróć -1 w przypadku błędu, 0, gdy się powiedzie
+    return n ==- 1 ?- 1: 0;
 }
 
- void Communication::send_message(const char *message, const char *destination){
 
-    inet_aton(destination, &their_addr.sin_addr);
-    send_all( sock_ord, message, inet_ntoa(my_addr.sin_addr), destination);
 
-    }
+
+
+
+
 
