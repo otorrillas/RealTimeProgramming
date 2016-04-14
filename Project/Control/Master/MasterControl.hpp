@@ -16,6 +16,7 @@ public:
 	MasterControl();
 	void add_order(int startFloor);
 	bool get_next_order(Order* new_order);
+	void delete_order(Order order);
 
 private:
 	queue<Order> orderList;

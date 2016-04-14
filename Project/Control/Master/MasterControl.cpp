@@ -18,7 +18,7 @@ void MasterControl::add_order(int startFloor) {
 	// look for queue.emplace()
 }
 void MasterControl::add_order(Order order) {
-
+	orderList.add(order);
 }
 
 bool MasterControl::get_next_order(Order* new_order) {

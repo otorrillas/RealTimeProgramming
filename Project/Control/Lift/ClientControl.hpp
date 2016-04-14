@@ -1,5 +1,5 @@
 /*
-	LiftControl.hpp
+	ClientControl.hpp
 	Real-Time Programming Project
 	Authors: @bomanmaster @otorrillas
 */
@@ -16,34 +16,23 @@ using namespace std;
 #define OPT_DELAY 175
 #define DOOR_DELAY 2000
 
-class LiftControl {
+class ClientControl {
 private:
 	// State variables
 	bool state;	// 0 idle, 1 busy
 	int currFloor;
-
-	// Only have sense when state == BUSY
-	vector<bool> targetFloors(N_FLOORS, false);
-	elev_motor_direction_t direction;
-	
+	int workerPID;
 
 	// Elevator & Panel interface
 	ElevInterface elevInt;
 	PanelInterface panelInt;
 
+	void update_state();
+
 public:
-	LiftControl();
-
-	void go_to_floor(int floor);
-
-	bool get_state();
+	ClientControl();
 	int get_current_floor();
-	
-
-private:
-	void worker_thread();
-	void set_motor_direction(elev_motor_direction_t dirn);
-	void set_target_floor(int floor);
-	void floor_pause();
+	bool get_state();
+	void set_target_floor(int targetFloor);
 
 }
