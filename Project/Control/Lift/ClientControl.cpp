@@ -5,12 +5,6 @@
 */
 
 #include "ClientControl.hpp"
-#include "ElevInterface.hpp"
-#include "PanelInterface.hpp"
-
-#include <string>
-#include <unistd.h>
-#include <stdio.h>
 
 using namespace std;
 
@@ -36,14 +30,12 @@ int ClientControl::get_current_floor() {
 	return currFloor;
 }
 
-void update_state() {
+void ClientControl::update_state() {
 	if(workerPID != -1 and (0 == kill(pid, 0)))
 		// Worker is still running
 		state = STATE_BUSY;
 	else 
-		STATE_IDLE;
-	
-
+		state = STATE_IDLE;
 }
 
 bool ClientControl::get_state() {
@@ -56,10 +48,10 @@ void ClientControl::set_target_floor(int targetFloor) {
 	pid_t pid = fork();
 
 	if(pid == 0) {
+		setsid();
+
 		// Child process
 		char *argv2[] = {"LiftWorker", "-x", "./LiftWorker", NULL};
-
-		setsid();
 		int rc2 = execv("/usr/bin/gnome-terminal", argv2);
 		if (rc2 == -1)
 			perror("Error at spawning LiftWorker");
@@ -68,4 +60,19 @@ void ClientControl::set_target_floor(int targetFloor) {
 		// parent process
 		workerPID = pid;
 	}
+}
+
+void ClientControl::set_light(int btn_type, int targetFloor, int value) {
+	panelInt.set_button_lamp(
+		(PanelInterface::tag_elev_lamp_type)btn_type,
+		targetFloor,
+		value
+	);
+}
+
+bool ClientControl::is_button_active(int btn_type, int targetFloor) {
+	return panelInt.get_button_signal(
+		(PanelInterface::tag_elev_lamp_type)btn_type, 
+		targetFloor) 
+	== 1;
 }

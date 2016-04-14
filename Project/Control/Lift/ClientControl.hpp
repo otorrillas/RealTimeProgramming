@@ -5,8 +5,15 @@
 */
 
 #include "ElevInterface.hpp"
+#include "PanelInterface.hpp"
+
+#include <string>
 #include <vector>
 #include <thread>
+	
+#include <unistd.h>
+#include <stdio.h>
+
 
 using namespace std;
 
@@ -31,8 +38,12 @@ private:
 
 public:
 	ClientControl();
+
 	int get_current_floor();
 	bool get_state();
+
 	void set_target_floor(int targetFloor);
+	void set_light(int btn_type, int targetFloor);
+
 
 }
