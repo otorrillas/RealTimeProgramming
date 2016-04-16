@@ -88,40 +88,60 @@ Message get_new_message() {
 int main(int argc,char *argv[]) {
 
 	server_ip = argv[1];
-
 	thread listenThread(listener_thread);
 
     commSender.initializeReciever();
     commSender.initializeSender();
     commSender.sendMessage("HELLO", server_ip);
 
-    int prev_state = STATE_IDLE;
+    int prevState = STATE_IDLE;
+    vector<vector<bool>> lights_state(2, vector<bool>(N_FLOORS, false));
 
 
     while(1) {
 
-    	/* ORDERS */
-    	if(contLift.get_state == STATE_IDLE) {
-            if(prev_state == STATE_BUSY) {
-                // Notify the master we are idle :)
-                string send_msg = "I " + to_string(contLift.get_current_floor());
-                commSender.sendMessage(send_msg, server_ip);
-            }
-    		if(pendingMessages.empty())
-    			read_new_messages();
-    		else {
-    			Message msg = get_new_message();
-                if(msg.type == "O")
-                    contLift.set_target_floor(msg.targetFloor);
-                else if(msg.type == "L")
-                    contLift.set_light(msg.button_type, msg.targetFloor, msg.value);
-    		}
-            prev_state = STATE_IDLE;
-    	}
-        else
-            prev_state = STATE_BUSY;
+    	int currState = contLift.get_state();
 
-    	/* ETASJEPANELPANEL */
+    	/* ORDERS */
+    	if(currState == STATE_IDLE and prevState == STATE_BUSY) {
+            // Notify the master we are idle :)
+            string send_msg = "I " + to_string(contLift.get_current_floor());
+            commSender.sendMessage(send_msg, server_ip);
+        }
+        else if(currState == STATE_BUSY) {
+        	// Check wether if the command light was turned off or not (yet)
+        	// to notify the master
+			int notiFloor, notiBtn;
+			if(contLift.light_off(&notiBtn, &notiFloor)) {
+				string send_msg = "N " 
+								+ to_string(notiFloor) + " " 
+								+ to_string(notiBtn) 
+								+ " 0"
+ 				commSender.sendMessage(send_msg, server_ip);
+			}
+        }
+
+
+
+		if(pendingMessages.empty())
+			read_new_messages();
+		else {
+			Message msg = get_new_message();
+            if(msg.type == "O") {
+            	contLift.set_target_floor(msg.targetFloor);
+            }
+                
+            else if(msg.type == "L") {
+                contLift.set_light(msg.button_type, msg.targetFloor, msg.value);
+                lights_state[msg.button_type][msg.targetFloor] = msg.value;
+
+            }
+		}
+            
+    	
+            
+
+    	/* ETASJEPANELPANEL BUTTONS */
 
 
     	for(int i = 0; i < N_FLOORS; i++) {
@@ -129,14 +149,15 @@ int main(int argc,char *argv[]) {
     			if(contLift.is_button_active(j, i)) {
                     // Switch on the light
                     contLift.set_light(j, i, LIGHT_ON);
+                    lights_state[j][i] = LIGHT_ON;
                     // Notify the server to spawn it
-                    string send_msg = "N " + to_string(i) + " " + to_string(j);
+                    string send_msg = "N " + to_string(i) + " " + to_string(j) + " 0";
     				commSender.sendMessage(send_msg, server_ip);
-
     			}
     		}
     	}
 
+    	prevState = currState;
     	
     }
     

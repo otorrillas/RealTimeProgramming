@@ -7,6 +7,8 @@
 #include <iostream>
 #include <unistd.h>
 #include <thread>
+#include <string>
+#include <vector>
 
 #include "ElevInterface.hpp"
 #include "PanelInterface.hpp"
@@ -49,6 +51,7 @@ void workerThread() {
 
 int main() {
 
+    
     cout << "Press STOP button to stop elevator and exit program." << endl;
 
     currFloor = elevInt.get_floor_sensor_signal();

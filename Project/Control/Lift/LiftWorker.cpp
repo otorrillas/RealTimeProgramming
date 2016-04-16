@@ -6,6 +6,7 @@
 
 #include "ElevInterface.hpp"
 #include "PanelInterface.hpp"
+
 #include <vector>
 
 using namespace std;
@@ -19,6 +20,7 @@ void floor_pause() {
 	elevInt.set_motor_direction(ElevInterface::DIRN_STOP);
 	panelInt.set_door_open_lamp(1);
 	delay(DOOR_DELAY);
+	while(panelInt.get_obstruction_signal() == 1);
 	panelInt.set_door_open_lamp(0);
 }
 
@@ -27,13 +29,18 @@ int main(int argc,char *argv[]) {
 		return -1;
 
 	
-
+	/* INITIAL SETUP */
 	int currentFloor = elevInt.get_floor_sensor_signal();
 	int targetFloor = argv[1];
 	elev_motor_direction_t direction = ElevInterface::DIRN_UP;
-	if (panelInt.get_button_signal(PanelInterface::BUTTON_CALL_UP, targetFloor));
-		direction = 1;
+	elev_button_type_t targetBtnType = PanelInterface::BUTTON_CALL_UP;
+	if (panelInt.get_button_signal(PanelInterface::BUTTON_CALL_DOWN, targetFloor) == 1) {
+		direction = ElevInterface::DIRN_DOWN;
+		targetBtnType = PanelInterface::BUTTON_CALL_DOWN;
+	}
 
+
+	/* GOING TO TARGET FLOOR */
 
 	if(targetFloor > currentFloor)
 		elevInt.set_motor_direction(ElevInterface::DIRN_UP);
@@ -41,7 +48,11 @@ int main(int argc,char *argv[]) {
 		elevInt.set_motor_direction(ElevInterface::DIRN_DOWN);
 
 	while(elevInt.get_floor_sensor_signal != targetFloor);
+	panelInt.set_button_lamp(PanelInterface::BUTTON_CALL_UP, targetFloor, 0);
+
 	floor_pause();
+
+	/* PROCESSING FLOORS REQUESTS */
 
 	list<int> requestedFloors;
 	for(int i = 0; i < N_FLOORS; i++)
@@ -54,7 +65,10 @@ int main(int argc,char *argv[]) {
 
 	while(!requestedFloors.empty()) {
 		elevInt.set_motor_direction(direction);
-		while(requestedFloors.front() != (currentFloor = elevInt.get_floor_sensor_signal()));
+		while(requestedFloors.front() != (currentFloor = elevInt.get_floor_sensor_signal())) {
+			if(currentFloor > 0)
+				panelInt.set_floor_indicator(currentFloor);
+		}
 		requestedFloors.pop_front();
 		floor_pause();
 	}
