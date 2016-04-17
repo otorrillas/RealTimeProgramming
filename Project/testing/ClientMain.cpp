@@ -12,6 +12,7 @@
 
 #include "utils.hpp"
 
+#include <iostream>
 #include <thread>
 #include <fstream>
 #include <vector>
@@ -73,7 +74,7 @@ void read_new_messages() {
 
 }
 
-Message get_new_message() {
+Message get_new_message() { 
 	Message msg = pendingMessages.front();
 	pendingMessages.pop();
 	return msg;
@@ -82,11 +83,31 @@ Message get_new_message() {
 
 int main(int argc,char *argv[]) {
 
-	server_ip = argv[1];
-	thread listenThread(listener_thread);
+    server_ip = argv[1];
+
+    if(argc > 2 and argv[2] == "L") {
+        cout << "listener_thread initialized";
+        listener_thread();
+    }
+    
+    pid_t pid = fork();
+    if (pid == 0) {
+        char *argv2[] = {"ClientMain", "-x", "./ClientMain", argv[1],"L", NULL};
+        int rc2 = execv("/usr/bin/gnome-terminal",argv2);
+        if (rc2 == -1 )
+            perror("Error at spawning Master recv");
+    }
+
+    
+    
+    cout << "Server IP" << server_ip << endl;
+	
+    
 
     commSender.initializeReciever();
     commSender.initializeSender();
+
+    cout << "Sender initialized" << endl;
     commSender.sendMessage("HELLO", server_ip);
     
 
@@ -96,11 +117,12 @@ int main(int argc,char *argv[]) {
 
 
     while(1) {
-
+        //cout << "Starting main loop" << endl;
     	int currState = contLift.get_state();
         int currFloor = contLift.get_current_floor();
     	/* ORDERS */
     	if(currState == STATE_IDLE and prevState == STATE_BUSY) {
+            //cout << "Notifying master" << endl;
             // Notify the master we are idle :)
             string send_msg = "I " + to_string(currFloor);
             commSender.sendMessage(send_msg.c_str(), server_ip);
@@ -112,25 +134,15 @@ int main(int argc,char *argv[]) {
                                 + to_string(contLift.get_direction());
                 commSender.sendMessage(send_msg.c_str(), server_ip);
             }
-        	// Check wether if the command light was turned off or not (yet)
-        	// to notify the master
-			int notiFloor, notiBtn;
-			if(contLift.light_off(&notiBtn, &notiFloor)) {
-				string send_msg = "N " 
-								+ to_string(notiFloor) + " " 
-								+ to_string(notiBtn) 
-								+ " 0";
-
- 				commSender.sendMessage(send_msg.c_str(), server_ip);
-			}
         }
 
 
 
-
-		if(pendingMessages.empty())
-			read_new_messages();
+        //cout << "Reading messages" << endl;
+		if(pendingMessages.empty());
+			//read_new_messages();
 		else {
+            //cout << "Getting new message" << endl;
 			Message msg = get_new_message();
             if(msg.type == "O") {
             	contLift.set_target_floor(msg.targetFloor);
@@ -150,15 +162,25 @@ int main(int argc,char *argv[]) {
 
 
     	for(int i = 0; i < N_FLOORS; i++) {
-    		for (int j = 0; j < 2; j++) { 
-    			if(contLift.is_button_active(j, i)) {
+    		for (int j = 0; j < 2; j++) {
+                bool b =  contLift.is_button_active(j, i);
+                int lvalue = 0;
+    			if(b) {
                     // Switch on the light
+                    lvalue = 1;
                     contLift.set_light(j, i, LIGHT_ON);
                     lights_state[j][i] = LIGHT_ON;
-                    // Notify the server to spawn it
-                    string send_msg = "L " + to_string(i) + " " + to_string(j) + " 0";
-    				commSender.sendMessage(send_msg.c_str(), server_ip);
     			}
+                
+                if(b != lights_state[j][i]){
+                    string send_msg = "N " 
+                                    + to_string(i) + " " 
+                                    + to_string(j) + " "
+                                    + to_string(lvalue);
+                    commSender.sendMessage(send_msg.c_str(), server_ip);
+                    lights_state[j][i] = b;
+                }
+                    
     		}
     	}
 
