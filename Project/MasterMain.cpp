@@ -90,31 +90,6 @@ void listener_thread() {
 
 void update_lift_list() {
 	liftMap = commSender.checkAvailableLifts();
-	if(liftMap.size() > liftInfoVec.size()) {
-		for(auto& kv : liftMap) {
-			int i = 0;
-			bool b = true;
-			while(b and i < liftInfoVec.size()) {
-				b = (kv.first != liftInfoVec[i].id);
-				++i;
-			}
-
-			if(b) {
-				LiftInfo tmpInfo(kv.first);
-				liftInfoVec.push_back(tmpInfo);
-			}
-		}
-	}
-	else if(liftMap.size() < liftInfoVec.size()) {
-		int vecSize = liftInfoVec.size();
-		for(int i = 0; i < vecSize; i++) {
-			if(liftMap.count(liftInfoVec[i].id) == 0) {
-				liftInfoVec.erase(liftInfoVec.begin() + i);
-				--i;
-				--vecSize;		
-			}
-		}
-	}
 }
 
 int find_in_infoVec(string id) {
@@ -128,13 +103,6 @@ void update_idle_lift_info(Message msg) {
 	liftInfoVec[i].currFloor = msg.targetFloor;
 	liftInfoVec[i].direction = DIR_STOP;
 	liftInfoVec[i].status = STATUS_IDLE;
-}
-
-void update_busy_lift_info(Message msg) {
-	int i = find_in_infoVec(msg.sender);
-	liftInfoVec[i].currFloor = msg.targetFloor;
-	liftInfoVec[i].direction = msg.value;
-	liftInfoVec[i].status = STATUS_BUSY;
 }
 
 void change_lift_status(string liftId, bool value) {
@@ -203,8 +171,6 @@ int main(int argc,char *argv[]) {
 			else if(msg.type == "I") {
 				update_idle_lift_info(msg);
 			}
-			else
-				update_busy_lift_info(msg);
 		}
 
 		/* Pending orders */

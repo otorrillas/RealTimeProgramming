@@ -17,7 +17,9 @@ class LiftInfo
 {
 public:
 	LiftInfo();
-	
+	LiftInfo(string id) {
+		this->id = id;
+	}
 	string id;
 	int currFloor;
 	int direction;

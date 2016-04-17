@@ -21,6 +21,7 @@ void ElevInterface::set_motor_direction(elev_motor_direction_t dirn) {
         io_set_bit(MOTORDIR);
         io_write_analog(MOTOR, MOTOR_SPEED);
     }
+    this->dirn = (int)dirn;
 }
 
 int ElevInterface::get_floor_sensor_signal(void) {
@@ -37,4 +38,10 @@ int ElevInterface::get_floor_sensor_signal(void) {
     }
 }
 
+int ElevInterface::get_direction(void) {
+    if(io_read_bit(MOTORDIR))
+        return -1;
+    else
+        return 1;
+}
 

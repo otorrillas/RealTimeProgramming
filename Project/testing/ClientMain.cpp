@@ -91,20 +91,27 @@ int main(int argc,char *argv[]) {
     
 
     int prevState = STATE_BUSY;
+    int prevFloor = -1;
     vector<vector<bool>> lights_state(2, vector<bool>(N_FLOORS, false));
 
 
     while(1) {
 
     	int currState = contLift.get_state();
-
+        int currFloor = contLift.get_current_floor();
     	/* ORDERS */
     	if(currState == STATE_IDLE and prevState == STATE_BUSY) {
             // Notify the master we are idle :)
-            string send_msg = "I " + to_string(contLift.get_current_floor());
+            string send_msg = "I " + to_string(currFloor);
             commSender.sendMessage(send_msg.c_str(), server_ip);
         }
         else if(currState == STATE_BUSY) {
+            if(prevFloor != currFloor) {
+                string send_msg = "B "
+                                + to_string(currFloor) + " "
+                                + to_string(contLift.get_direction());
+                commSender.sendMessage(send_msg.c_str(), server_ip);
+            }
         	// Check wether if the command light was turned off or not (yet)
         	// to notify the master
 			int notiFloor, notiBtn;
@@ -117,6 +124,7 @@ int main(int argc,char *argv[]) {
  				commSender.sendMessage(send_msg.c_str(), server_ip);
 			}
         }
+
 
 
 
@@ -155,6 +163,7 @@ int main(int argc,char *argv[]) {
     	}
 
     	prevState = currState;
+        prevFloor = currFloor;
     	
     }
     

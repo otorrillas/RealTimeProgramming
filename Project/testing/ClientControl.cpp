@@ -30,6 +30,11 @@ int ClientControl::get_current_floor() {
 	return currFloor;
 }
 
+int ClientControl::get_direction() {
+	direction = elevInt.get_direction();
+	return direction;
+}
+
 void ClientControl::update_state() {
 	if(workerPID != -1 and (0 == kill(workerPID, 0)))
 		// Worker is still running
@@ -92,5 +97,8 @@ bool ClientControl::is_button_active(int btn_type, int targetFloor) {
 }
 
 bool ClientControl::light_off(int * notiBtn, int * notiFloor) {
-	return false;
+	bool res;
+
+
+	return res;
 }

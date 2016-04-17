@@ -16,6 +16,8 @@ public:
             this->buttonType = stoi(splt_content[2]);
             this->value = stoi(splt_content[3]);
         }
+        else if(this->type == "B")
+        	this->value = stoi(splt_content[2]);
 	}
 
 	int targetFloor = -1;

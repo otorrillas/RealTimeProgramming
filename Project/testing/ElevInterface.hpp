@@ -13,10 +13,12 @@ public:
 		DIRN_UP = 1
 	} elev_motor_direction_t;
 
+	int dirn;
+
 
 	ElevInterface();
 	void set_motor_direction(elev_motor_direction_t dirn);
-
+	int get_direction(void);
 	int get_floor_sensor_signal(void);
 	
 };

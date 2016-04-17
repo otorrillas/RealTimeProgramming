@@ -27,9 +27,11 @@ using namespace std;
 class ClientControl {
 private:
 	// State variables
-	bool state;	// 0 idle, 1 busy
 	int currFloor;
+	int direction;
 	int workerPID;
+	bool state;	// 0 idle, 1 busy
+	bool hasChangedDir;
 
 	// Elevator & Panel interface
 	ElevInterface elevInt;
@@ -40,7 +42,7 @@ private:
 
 public:
 	ClientControl();
-
+	int get_direction();
 	int get_current_floor();
 	bool get_state();
 	void set_target_floor(int targetFloor);
