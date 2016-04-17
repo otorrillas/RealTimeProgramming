@@ -4,15 +4,18 @@
 	Authors: @bomanmaster @otorrillas
 */
 
-#include "ClientControl.hpp"
+#include "Communication.hpp"
 #include "Communication_Lift.hpp"
 #include "Message.hpp"
+#include "ClientControl.hpp"
+
 
 #include "utils.hpp"
 
 #include <thread>
 #include <fstream>
 #include <vector>
+#include <queue>
 
 using namespace std;
 
@@ -22,7 +25,7 @@ using namespace std;
 
 ClientControl contLift;
 
-string server_ip;
+const char * server_ip;
 Communication_Lift commListener;
 Communication_Lift commSender;
 
@@ -85,8 +88,9 @@ int main(int argc,char *argv[]) {
     commSender.initializeReciever();
     commSender.initializeSender();
     commSender.sendMessage("HELLO", server_ip);
+    
 
-    int prevState = STATE_IDLE;
+    int prevState = STATE_BUSY;
     vector<vector<bool>> lights_state(2, vector<bool>(N_FLOORS, false));
 
 
@@ -98,7 +102,7 @@ int main(int argc,char *argv[]) {
     	if(currState == STATE_IDLE and prevState == STATE_BUSY) {
             // Notify the master we are idle :)
             string send_msg = "I " + to_string(contLift.get_current_floor());
-            commSender.sendMessage(send_msg, server_ip);
+            commSender.sendMessage(send_msg.c_str(), server_ip);
         }
         else if(currState == STATE_BUSY) {
         	// Check wether if the command light was turned off or not (yet)
@@ -108,8 +112,9 @@ int main(int argc,char *argv[]) {
 				string send_msg = "N " 
 								+ to_string(notiFloor) + " " 
 								+ to_string(notiBtn) 
-								+ " 0"
- 				commSender.sendMessage(send_msg, server_ip);
+								+ " 0";
+
+ 				commSender.sendMessage(send_msg.c_str(), server_ip);
 			}
         }
 
@@ -143,8 +148,8 @@ int main(int argc,char *argv[]) {
                     contLift.set_light(j, i, LIGHT_ON);
                     lights_state[j][i] = LIGHT_ON;
                     // Notify the server to spawn it
-                    string send_msg = "N " + to_string(i) + " " + to_string(j) + " 0";
-    				commSender.sendMessage(send_msg, server_ip);
+                    string send_msg = "L " + to_string(i) + " " + to_string(j) + " 0";
+    				commSender.sendMessage(send_msg.c_str(), server_ip);
     			}
     		}
     	}
@@ -153,5 +158,6 @@ int main(int argc,char *argv[]) {
     	
     }
     
+    return 0;
 
 }

@@ -9,8 +9,8 @@ class Order
 {
 	
 public:
-	Order(int startFloor) {
-		this->startFloor = startFloor;
+	Order(int targetFloor, int direction) {
+		this->targetFloor = targetFloor;
 	}
 
 	int targetFloor;

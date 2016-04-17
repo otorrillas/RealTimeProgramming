@@ -3,8 +3,8 @@
 	Real-Time Programming Project
 	Authors: @bomanmaster @otorrillas
 */
-
-using namespace std;
+#ifndef _LIFTINFO_HPP
+#define _LIFTINFO_HPP
 
 #define DIR_UP 1
 #define DIR_DOWN -1
@@ -16,13 +16,8 @@ using namespace std;
 class LiftInfo
 {
 public:
-	LiftInfo(String id, int currFloor) {
-		this->id = id;
-		this->currFloor = currFloor;
-		this->direction = DIR_STOP;
-		this->status = STATUS_IDLE;
-	}
-
+	LiftInfo();
+	
 	string id;
 	int currFloor;
 	int direction;
@@ -30,3 +25,5 @@ public:
 
 	
 };
+
+#endif

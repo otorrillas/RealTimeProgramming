@@ -28,4 +28,4 @@
 *.app
 
 # Elevator
-elevator
+elevator MasterMain ClientMain

@@ -2,35 +2,50 @@
 CXX = g++
 
 # Compiler flags go here.
-CXXFLAGS = -g -std=c++11 -Wall -Wextra 
-# -lpthread -Wl,--no-as-needed
+CXXFLAGS = -g -std=c++11 
+#-Wall -Wextra
 
 # Linker flags go here.
 LDFLAGS = -lcomedi -lm -pthread 
 
 # list of sources
-ELEVSRC = ElevInterface.cpp PanelInterface.cpp io.cpp main.cpp
+DRIVERSRC = ElevInterface.cpp PanelInterface.cpp io.cpp
+COMMSRC = Communication.cpp Communication_Lift.cpp Communication_Master.cpp
+CONTSRC = ClientControl.cpp
+
 
 # program executable file name.
-TARGET = elevator
+MASTERSRC = MasterMain.cpp
+MASTER = MasterMain
+
+CLIENTSRC = ClientMain.cpp
+CLIENT = ClientMain
 
 # top-level rule, to compile everything.
-all: $(TARGET) 
+all: $(MASTER) $(CLIENT)
 
 # Define all object files.
-ELEVOBJ = $(ELEVSRC:.cpp=.o)
+DRIVEROBJ = $(DRIVERSRC:.cpp=.o)
+COMMOBJ = $(COMMSRC:.cpp=.o)
+CONTOBJ = $(CONTSRC:.cpp=.o)
+MASTEROBJ = $(MASTERSRC:.cpp=.o)
+CLIENTOBJ = $(CLIENTSRC:.cpp=.o)
 
 # rule to link the program
-$(TARGET): $(ELEVOBJ)
+$(CLIENT): $(DRIVEROBJ) $(COMMOBJ) $(CONTOBJ) $(CLIENTOBJ)
+	$(CXX) $^ -o $@ $(LDFLAGS)
+
+$(MASTER): $(DRIVEROBJ) $(COMMOBJ) $(MASTEROBJ)
 	$(CXX) $^ -o $@ $(LDFLAGS)
 
 # Compile: create object files from C++ source files.
 %.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
+
 # rule for cleaning re-compilable files.
 clean:
-	rm -f $(TARGET) $(ELEVOBJ)
+	rm -f $(MASTEROBJ) $(CLIENTOBJ) $(DRIVEROBJ) $(COMMOBJ) $(CONTOBJ)
 
 rebuild:	clean all
 
