@@ -6,6 +6,7 @@
 
 #include "ClientControl.hpp"
 
+
 using namespace std;
 
 ClientControl::ClientControl() {
@@ -17,6 +18,8 @@ ClientControl::ClientControl() {
 	if(currFloor == -1) {
 		elevInt.set_motor_direction(ElevInterface::DIRN_DOWN);
 		while((currFloor = elevInt.get_floor_sensor_signal()) == -1);
+		panelInt.set_floor_indicator(currFloor);
+		//delay(DOOR_DELAY);
 		elevInt.set_motor_direction(ElevInterface::DIRN_STOP);
 	}
 	
@@ -94,11 +97,4 @@ bool ClientControl::is_button_active(int btn_type, int targetFloor) {
 		(PanelInterface::tag_elev_lamp_type)btn_type, 
 		targetFloor) 
 	== 1;
-}
-
-bool ClientControl::light_off(int * notiBtn, int * notiFloor) {
-	bool res;
-
-
-	return res;
 }

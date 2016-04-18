@@ -48,6 +48,5 @@ public:
 	void set_target_floor(int targetFloor);
 	bool is_button_active(int btn_type, int targetFloor);
 	void set_light(int btn_type, int targetFloor, int value);
-	bool light_off(int * notiBtn, int * notiFloor);
 
 };

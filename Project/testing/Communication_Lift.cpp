@@ -129,7 +129,7 @@ void Communication_Lift::initializeSender(){
 
                             cout << "Last recieved order: " << received_messages.back() << endl;
                             cout << "Number of messages:" << received_messages.size() << endl;
-                            saveMessage();
+                            saveMessage("Client_messages.txt");
 
 
                         }

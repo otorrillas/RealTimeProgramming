@@ -73,7 +73,7 @@ string marshal(const char *message, const char *from,const char *destination);
 string unmarshal(string packet, string type);
 
 // save recieved messages to a file
-void saveMessage();
+void saveMessage(string filename);
 
 // recieves all of the message, handles partial recieves, returns number of recieved bytes
 int recieveAll(int socket);

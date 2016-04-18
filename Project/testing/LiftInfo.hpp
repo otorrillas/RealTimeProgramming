@@ -19,6 +19,9 @@ public:
 	LiftInfo();
 	LiftInfo(string id) {
 		this->id = id;
+		currFloor = -1;
+		direction = DIR_STOP;
+		status = STATUS_IDLE;
 	}
 	string id;
 	int currFloor;

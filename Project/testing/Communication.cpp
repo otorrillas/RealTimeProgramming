@@ -52,9 +52,9 @@ try{
 }catch(const out_of_range &oor){cout << "Substring Error"<<endl;}
 }
 
-void Communication::saveMessage(){
+void Communication::saveMessage(string filename){
 
-    message_file.open("Recieved_messages.txt", ios::app|ios::out);
+    message_file.open(filename, ios::app|ios::out);
 
     vector<string>::iterator iter;
 

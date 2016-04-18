@@ -34,43 +34,40 @@ int last_msg_line = 0;
 queue<Message> pendingMessages;
 
 
-void listener_thread() {
-	commListener.initializeReciever();
-	commListener.initializeSender();
-	commListener.sendMessage("HELLO", server_ip);
-	commListener.acceptOrders();	
-}
-
 void read_new_messages() {
 
-    fstream msg_log;
-    char line_buf[255];
-    int line_count = 0;
+    if(access("Connected_lifts.txt", F_OK) != -1){
+        fstream msg_log;
+        char line_buf[255];
+        int line_count = 0;
 
-    msg_log.open("Recieved_messages.txt", ios::in);
+        msg_log.open("Client_messages.txt", ios::in);
 
-    while(line_count < last_msg_line and !msg_log.eof()) {
-        msg_log.getline(line_buf, sizeof(line_buf));
-        ++line_count;
+        while(line_count < last_msg_line and !msg_log.eof()) {
+            msg_log.getline(line_buf, sizeof(line_buf));
+            ++line_count;
+        }
+
+    	while(!msg_log.eof()) {
+            // Read the line
+    		msg_log.getline(line_buf, sizeof(line_buf));
+    		string line(line_buf);
+            if(!line.empty()) {
+
+                // Unmarshal the message and split it between spaces
+                string content = commSender.unmarshal(line, "message");
+                       
+                // Translate the message
+                Message msg(content);
+                
+                // Add it to pendingMessages list
+                pendingMessages.push(msg);
+                // Increment line counter
+                ++last_msg_line;
+            }
+    	}
+    	msg_log.close();
     }
-
-	while(!msg_log.eof()){
-        // Read the line
-		msg_log.getline(line_buf, sizeof(line_buf));
-		string line(line_buf);
-
-        // Unmarshal the message and split it between spaces
-        string content = commSender.unmarshal(line, "message");
-               
-        // Translate the message
-        Message msg(content);
-        
-        // Add it to pendingMessages list
-        pendingMessages.push(msg);
-        // Increment line counter
-        ++last_msg_line;
-	}
-	msg_log.close();
 
 }
 
@@ -84,30 +81,24 @@ Message get_new_message() {
 int main(int argc,char *argv[]) {
 
     server_ip = argv[1];
-
-    if(argc > 2 and argv[2] == "L") {
-        cout << "listener_thread initialized";
-        listener_thread();
-    }
+    cout << "Server IP" << server_ip << endl;
     
     pid_t pid = fork();
     if (pid == 0) {
-        char *argv2[] = {"ClientMain", "-x", "./ClientMain", argv[1],"L", NULL};
+        char *argv2[] = {"ClientListener", "-x", "./ClientListener", argv[1], NULL};
         int rc2 = execv("/usr/bin/gnome-terminal",argv2);
         if (rc2 == -1 )
-            perror("Error at spawning Master recv");
+            perror("Error at spawning ClientListener");
     }
 
-    
-    
-    cout << "Server IP" << server_ip << endl;
-	
+
+    sleep(1);
+
+    cout << "Sender initialized" << endl;
     
 
     commSender.initializeReciever();
     commSender.initializeSender();
-
-    cout << "Sender initialized" << endl;
     commSender.sendMessage("HELLO", server_ip);
     
 
@@ -139,8 +130,8 @@ int main(int argc,char *argv[]) {
 
 
         //cout << "Reading messages" << endl;
-		if(pendingMessages.empty());
-			//read_new_messages();
+		if(pendingMessages.empty())
+			read_new_messages();
 		else {
             //cout << "Getting new message" << endl;
 			Message msg = get_new_message();
@@ -169,10 +160,11 @@ int main(int argc,char *argv[]) {
                     // Switch on the light
                     lvalue = 1;
                     contLift.set_light(j, i, LIGHT_ON);
-                    lights_state[j][i] = LIGHT_ON;
+                    //lights_state[j][i] = LIGHT_ON;
     			}
                 
-                if(b != lights_state[j][i]){
+                if(b and b != lights_state[j][i]){
+                    cout << "L VALUE" << lvalue;
                     string send_msg = "N " 
                                     + to_string(i) + " " 
                                     + to_string(j) + " "

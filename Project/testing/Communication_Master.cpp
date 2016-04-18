@@ -240,13 +240,13 @@ void Communication_Master::acceptReplies(){
                             string packet(buf);
                             cout << packet << endl;
 
-                            saveMessage();
+                            saveMessage("Master_messages.txt");
 
                             if(unmarshal(packet, "message") == "HELLO" ){
 
                                 connected_lifts_num++;
                                 string lift_num = "Lift" + to_string(connected_lifts_num);
-                                lift_file.open("Connected_lifts.txt", ios::app|ios::out);
+                                lift_file.open("Connected_lifts.txt", ios::out);
                                 lift_file << lift_num + " " + unmarshal(packet,"from") + '\n';
                                 lift_file.close();
 
