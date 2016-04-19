@@ -36,7 +36,7 @@ queue<Message> pendingMessages;
 
 void read_new_messages() {
 
-    if(access("Connected_lifts.txt", F_OK) != -1){
+    if(access("Client_messages.txt", F_OK) != -1){
         fstream msg_log;
         char line_buf[255];
         int line_count = 0;

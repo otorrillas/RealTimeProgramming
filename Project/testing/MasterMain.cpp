@@ -26,6 +26,8 @@ Communication_Master commListener;
 Communication_Master commSender;
 
 map<string,string> liftMap;
+map<string,LiftInfo> liftInfoMap;
+
 list<LiftInfo> liftInfoList;
 
 int last_msg_line = 0;
@@ -34,7 +36,7 @@ queue<Order> pendingOrders;
 
 
 void update_lift_list() {
-	
+	/*
 	if(access("Connected_lifts.txt", F_OK) != -1){
 		//cout << "Update info lift" << endl;
 
@@ -95,7 +97,16 @@ void update_lift_list() {
 		}
 		
 	}
+	*/
 
+}
+
+string get_lift_id(string liftIp) {
+	liftMap = commSender.checkAvailableLifts();
+	for(auto &kv : liftMap) {
+		if(kv.second == liftIp)
+			return kv.first;
+	}
 }
 
 void read_new_messages() {
@@ -125,24 +136,28 @@ void read_new_messages() {
 	    		cout << "Line read: " << line << endl;
 		        // Unmarshal the message and split it between spaces
 		    	string content = commSender.unmarshal(line, "message");
+		    	string senderIp = commSender.unmarshal(line, "from");
+		    	string senderId = get_lift_id(senderIp);
 
-		        // Translate the message
-		    	if(content != "HELLO") {
+
+		    	if(content == "HELLO") {
+		    		cout << "LitfInfo processing" << endl;
+		    		LiftInfo tmpInfo;
+		    		tmpInfo.id = senderId;
+		    		tmpInfo.status = STATUS_INIT;
+		    		liftInfoMap[senderId] = tmpInfo;
+		    		cout << "LitfInfo processed" << endl;
+		    		
+		    	}
+		    	else {
 		    		cout << "Pushing pending messages" << endl;
-		    		update_lift_list();
-		    		cout << "LiftMap.size() " << liftMap.size() << endl;
 		    		Message msg(content);
-		    		string senderIp = commSender.unmarshal(line, "from");
-		    		for(auto& kv : liftMap) {
-		    			cout << "LiftMap[" << kv.first << "]=" << kv.second << endl;
-						if(kv.second == senderIp) {
-							msg.sender = kv.first;
-						}
-					}
+		    		msg.sender = senderId;
 					// Add it to pendingMessages list
 		    		pendingMessages.push(msg);
-		    	}
 
+		    	}
+		        
 		        // Increment line counter
 		    	++last_msg_line;
 
@@ -151,7 +166,7 @@ void read_new_messages() {
 	    	
 	    }
     	msg_log.close();
-    	//cout << "Leaving read_new_messages" << endl;	
+    	cout << "Leaving read_new_messages" << endl;	
 	}
 }
 
@@ -171,38 +186,41 @@ Order get_new_order() {
 
 void update_idle_lift_info(Message msg) {
 
-	for(LiftInfo tmpInfo : liftInfoList) {
-	 	if(msg.sender == tmpInfo.id) {
-	 		tmpInfo.currFloor = msg.targetFloor;
-			tmpInfo.direction = DIR_STOP;
-			tmpInfo.status = STATUS_IDLE;
-	 		break;
-	 	}
-	 }
+	LiftInfo tmpInfo = liftInfoMap[msg.sender];
+	tmpInfo.currFloor = msg.targetFloor;
+	tmpInfo.direction = DIR_STOP;
+	tmpInfo.status = STATUS_IDLE;
+	liftInfoMap[msg.sender] = tmpInfo;
 	
 }
 
 void update_busy_lift_info(Message msg) {
-	/*
-	for(LiftInfo tmpInfo : liftInfoVec)
-		cout << "tmpInfo.id " << tmpInfo.id << endl;
-	int i = find_in_infoVec(msg.sender);
-	
-	liftInfoVec[i].currFloor = msg.targetFloor;
-	liftInfoVec[i].direction = msg.value;
-	liftInfoVec[i].status = STATUS_BUSY;
-	*/
+
+	LiftInfo tmpInfo = liftInfoMap[msg.sender];
+	tmpInfo.currFloor = msg.targetFloor;
+	tmpInfo.direction = msg.value;
+	tmpInfo.status = STATUS_BUSY;
+	liftInfoMap[msg.sender] = tmpInfo;
+
 }
 
 void change_lift_status(string liftId, bool value) {
-	
+
+	LiftInfo tmpInfo = liftInfoMap[liftId];
+	tmpInfo.status = value;
+	liftInfoMap[liftId] = tmpInfo;
+}
+bool available_lift(string id) {
+	liftMap = commSender.checkAvailableLifts();
+	return (liftMap.count(id) > 0);
 }
 
 bool find_n_send_best_lift(Order order) {
 	int minScore = N_FLOORS + 1;
 	string bestLiftId;
 	
-	for(LiftInfo tmpInfo : liftInfo) {
+	for(auto &kv : liftInfoMap) {
+		LiftInfo tmpInfo = kv.second;
 		if(tmpInfo.status == STATUS_IDLE) {
 			int tmpScore = order.targetFloor - tmpInfo.currFloor; 
 			if(tmpScore < 0)
@@ -213,12 +231,21 @@ bool find_n_send_best_lift(Order order) {
 		}
 			
 	}
-
-	string send_msg = "O "
+	if(bestLiftId.empty())
+		return false;
+	else {
+		cout << "BestLiftID = " << bestLiftId << endl;
+		string send_msg = "O "
 					+ to_string(order.targetFloor);
-
-	commSender.sendOrders(send_msg.c_str(), commSender.getLiftIp(bestLiftId));
-	change_lift_status(bestLiftId, STATUS_BUSY);
+		if(available_lift(bestLiftId)) {
+			commSender.sendOrders(send_msg.c_str(), commSender.getLiftIp(bestLiftId));
+			change_lift_status(bestLiftId, STATUS_BUSY);
+			return true;
+		}
+		else {
+			return find_n_send_best_lift(order);
+		}
+	}
 
 }
 
@@ -238,6 +265,7 @@ int main(int argc,char *argv[]) {
 
 	pid_t pid = fork();
     if (pid == 0) {
+    	return 1;
         char *argv2[] = {"MasterListener", "-x", "./MasterListener", NULL};
         int rc2 = execv("/usr/bin/gnome-terminal",argv2);
         if (rc2 == -1 )

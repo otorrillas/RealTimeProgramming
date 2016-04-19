@@ -19,18 +19,19 @@ MASTERSRC = MasterMain.cpp
 CLISTENERSRC = ClientListener.cpp
 MLISTENERSRC = MasterListener.cpp
 
-
+CLIENTTESTSRC = ClientTester.cpp
 
 # program executable file name.
 
 MASTER = MasterMain
 CLIENT = ClientMain
+CLIENTTEST = ClientTest
 
 CLISTENER = ClientListener
 MLISTENER = MasterListener
 
 # top-level rule, to compile everything.
-all: $(MASTER) $(CLIENT) $(CLISTENER) $(MLISTENER)
+all: $(MASTER) $(CLIENT) $(CLISTENER) $(MLISTENER) $(CLIENTTEST)
 
 # Define all object files.
 DRIVEROBJ = $(DRIVERSRC:.cpp=.o)
@@ -40,10 +41,16 @@ MASTEROBJ = $(MASTERSRC:.cpp=.o)
 CLIENTOBJ = $(CLIENTSRC:.cpp=.o)
 CLISTENEROBJ = $(CLISTENERSRC:.cpp=.o)
 MLISTENEROBJ = $(MLISTENERSRC:.cpp=.o)
+CLIENTTESTOBJ = $(CLIENTTESTSRC:.cpp=.o)
 
 # rule to link the program
 $(CLIENT): $(DRIVEROBJ) $(COMMOBJ) $(CONTOBJ) $(CLIENTOBJ)
 	$(CXX) $^ -o $@ $(LDFLAGS)
+
+$(CLIENTTEST): $(COMMOBJ) $(CLIENTTESTOBJ)
+	$(CXX) $^ -o $@ $(LDFLAGS)
+
+
 
 $(MASTER): $(DRIVEROBJ) $(COMMOBJ) $(MASTEROBJ)
 	$(CXX) $^ -o $@ $(LDFLAGS)

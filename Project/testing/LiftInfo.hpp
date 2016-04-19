@@ -12,23 +12,16 @@
 
 #define STATUS_IDLE 0
 #define STATUS_BUSY 1
+#define STATUS_INIT 2
+#define STATUS_DISC 3
 
-class LiftInfo
+struct LiftInfo
 {
-public:
-	LiftInfo();
-	LiftInfo(string id) {
-		this->id = id;
-		currFloor = -1;
-		direction = DIR_STOP;
-		status = STATUS_IDLE;
-	}
-	string id;
 	int currFloor;
 	int direction;
+	string id;
 	bool status;
 
-	
 };
 
 #endif
